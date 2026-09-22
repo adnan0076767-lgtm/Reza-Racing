@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>REZA RACING 3D FINAL</title>
+<title>REZA RACING 3D FINAL - SUPER CAR</title>
 
 <style>
 *{box-sizing:border-box}
@@ -198,6 +198,7 @@ canvas{
   border:1px solid rgba(0,234,255,.55);
   background:rgba(2,5,15,.55);
   overflow:hidden;
+  box-shadow:0 0 15px rgba(0,234,255,.12);
 }
 
 #miniCanvas{
@@ -429,7 +430,7 @@ button:active{
 
   <div id="brand">
     REZA RACING 3D
-    <small>STREET TURBO • FINAL</small>
+    <small>STREET TURBO • SUPER CAR</small>
   </div>
 
   <div id="raceInfo">
@@ -476,8 +477,6 @@ button:active{
 <div id="scan"></div>
 <div id="vignette"></div>
 
-<!-- START -->
-
 <div class="screen" id="startScreen">
 
   <div class="panel">
@@ -487,7 +486,7 @@ button:active{
     </div>
 
     <div class="sub">
-      3D STREET TURBO
+      3D STREET TURBO • SUPER CAR
     </div>
 
     <button id="startBtn">
@@ -526,8 +525,6 @@ button:active{
 
 </div>
 
-<!-- FINISH -->
-
 <div class="screen" id="finishScreen">
 
   <div class="panel">
@@ -551,12 +548,6 @@ button:active{
 </div>
 
 <script>
-
-/* =========================================================
-   REZA RACING 3D FINAL
-   PLAYABLE PSEUDO 3D RACING ENGINE
-   NO EXTERNAL LIBRARIES
-========================================================= */
 
 "use strict";
 
@@ -831,7 +822,8 @@ const opponentTemplates=[
     z:280,
     x:-.38,
     speed:208,
-    color:"#e62b3a"
+    color:"#e62b3a",
+    style:"muscle"
   },
 
   {
@@ -839,7 +831,8 @@ const opponentTemplates=[
     z:520,
     x:.38,
     speed:202,
-    color:"#ffc400"
+    color:"#ffc400",
+    style:"gt"
   },
 
   {
@@ -847,7 +840,8 @@ const opponentTemplates=[
     z:760,
     x:0,
     speed:197,
-    color:"#a938ff"
+    color:"#a938ff",
+    style:"sport"
   }
 
 ];
@@ -864,6 +858,7 @@ function resetOpponents(){
       x:o.x,
       speed:o.speed,
       color:o.color,
+      style:o.style,
       lap:1,
       wobble:Math.random()*10
 
@@ -1032,8 +1027,6 @@ function drawSky(){
   ctx.fillStyle=g;
   ctx.fillRect(0,0,W,H*.60);
 
-  /* STARS */
-
   for(let i=0;i<110;i++){
 
     const x=(i*173)%W;
@@ -1048,8 +1041,6 @@ function drawSky(){
     ctx.fillRect(x,y,s,s);
 
   }
-
-  /* MOON */
 
   const mx=W*.77;
   const my=H*.16;
@@ -1197,8 +1188,6 @@ function drawRoadSegment(A,B){
   const stripe=
     Math.floor(A.s.z/SEG)%2===0;
 
-  /* GRASS */
-
   quad(
     0,a.y,
     W,a.y,
@@ -1206,8 +1195,6 @@ function drawRoadSegment(A,B){
     0,b.y,
     stripe?"#05091a":"#071024"
   );
-
-  /* OUTSIDE GLOW */
 
   quad(
     a.center-a.roadHalf*1.12,a.y,
@@ -1217,8 +1204,6 @@ function drawRoadSegment(A,B){
     "#07102a"
   );
 
-  /* ROAD */
-
   quad(
     a.center-a.roadHalf,a.y,
     a.center+a.roadHalf,a.y,
@@ -1226,8 +1211,6 @@ function drawRoadSegment(A,B){
     b.center-b.roadHalf,b.y,
     stripe?"#151a28":"#101521"
   );
-
-  /* EDGE LINES */
 
   const edgeColor=
     stripe
@@ -1249,8 +1232,6 @@ function drawRoadSegment(A,B){
     b.center+b.roadHalf*.96,b.y,
     edgeColor
   );
-
-  /* LANE MARKINGS */
 
   if(stripe){
 
@@ -1369,7 +1350,40 @@ function drawRoadLights(segments){
 }
 
 /* =========================================================
-   CAR DRAW
+   SUPER CAR HELPERS
+========================================================= */
+
+function roundedRectPath(x,y,w,h,r){
+
+  r=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
+
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+
+}
+
+function glowRect(x,y,w,h,color,blur){
+
+  ctx.save();
+  ctx.shadowBlur=blur;
+  ctx.shadowColor=color;
+  ctx.fillStyle=color;
+  ctx.fillRect(x,y,w,h);
+  ctx.restore();
+
+}
+
+/* =========================================================
+   CAR DRAW - SUPER CAR UPGRADE
 ========================================================= */
 
 function drawCar(
@@ -1377,15 +1391,16 @@ function drawCar(
   y,
   scale,
   color,
-  playerCar=false
+  playerCar=false,
+  style="sport"
 ){
 
   const w=
-    (playerCar?90:70)*
+    (playerCar?104:74)*
     scale;
 
   const h=
-    (playerCar?145:112)*
+    (playerCar?154:116)*
     scale;
 
   if(w<2||h<2)return;
@@ -1394,98 +1409,413 @@ function drawCar(
 
   ctx.translate(x,y);
 
+  /*
+    PLAYER = lebih agresif.
+    OPPONENT = beberapa body style berbeda.
+  */
+
   if(playerCar){
 
     ctx.rotate(
-      player.drift*.06
+      player.drift*.075
     );
 
   }
 
-  /* SHADOW */
+  /* -------------------------------------------------------
+     SHADOW
+  ------------------------------------------------------- */
 
-  ctx.fillStyle="rgba(0,0,0,.55)";
+  ctx.save();
+
+  ctx.fillStyle="rgba(0,0,0,.65)";
+  ctx.shadowBlur=18;
+  ctx.shadowColor="rgba(0,0,0,.8)";
 
   ctx.beginPath();
+
   ctx.ellipse(
     0,
-    5,
-    w*.75,
-    h*.18,
+    h*.43,
+    w*.72,
+    h*.13,
     0,0,Math.PI*2
   );
+
   ctx.fill();
 
-  /* GLOW */
+  ctx.restore();
+
+  /* -------------------------------------------------------
+     NITRO UNDERGLOW
+  ------------------------------------------------------- */
+
+  const nitroActive=
+    playerCar&&
+    keys[" "]&&
+    player.speed>40&&
+    player.nitro>0;
 
   if(playerCar){
 
-    ctx.shadowBlur=25;
-    ctx.shadowColor="#00eaff";
+    ctx.save();
+
+    ctx.shadowBlur=
+      nitroActive
+        ? 42
+        : 22;
+
+    ctx.shadowColor=
+      nitroActive
+        ? "#b800ff"
+        : "#00eaff";
+
+    ctx.fillStyle=
+      nitroActive
+        ? "rgba(0,234,255,.20)"
+        : "rgba(0,234,255,.10)";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+      0,
+      h*.39,
+      w*.62,
+      h*.08,
+      0,0,Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
 
   }
 
-  /* BODY */
+  /* -------------------------------------------------------
+     MAIN BODY
+  ------------------------------------------------------- */
 
   const body=
     ctx.createLinearGradient(
-      -w/2,-h/2,
-      w/2,h/2
+      -w*.5,
+      -h*.5,
+      w*.5,
+      h*.5
     );
 
-  body.addColorStop(0,color);
-  body.addColorStop(.45,"#111827");
-  body.addColorStop(.75,color);
-  body.addColorStop(1,"#05060a");
+  body.addColorStop(
+    0,
+    playerCar
+      ? "#13d8ff"
+      : color
+  );
+
+  body.addColorStop(
+    .20,
+    color
+  );
+
+  body.addColorStop(
+    .42,
+    "#202a3c"
+  );
+
+  body.addColorStop(
+    .58,
+    "#080d16"
+  );
+
+  body.addColorStop(
+    .76,
+    color
+  );
+
+  body.addColorStop(
+    1,
+    "#03050a"
+  );
 
   ctx.fillStyle=body;
 
+  ctx.shadowBlur=
+    playerCar
+      ? nitroActive?30:18
+      : 8;
+
+  ctx.shadowColor=
+    playerCar
+      ? "#00eaff"
+      : color;
+
   ctx.beginPath();
 
-  ctx.moveTo(-w*.34,h*.48);
-  ctx.lineTo(-w*.48,h*.15);
-  ctx.lineTo(-w*.42,-h*.20);
-  ctx.lineTo(-w*.25,-h*.48);
-  ctx.lineTo(w*.25,-h*.48);
-  ctx.lineTo(w*.42,-h*.20);
-  ctx.lineTo(w*.48,h*.15);
-  ctx.lineTo(w*.34,h*.48);
+  /*
+     Aggressive supercar silhouette.
+  */
+
+  ctx.moveTo(
+    -w*.28,
+    -h*.51
+  );
+
+  ctx.lineTo(
+    w*.28,
+    -h*.51
+  );
+
+  ctx.lineTo(
+    w*.39,
+    -h*.39
+  );
+
+  ctx.lineTo(
+    w*.47,
+    -h*.08
+  );
+
+  ctx.lineTo(
+    w*.50,
+    h*.18
+  );
+
+  ctx.lineTo(
+    w*.40,
+    h*.46
+  );
+
+  ctx.lineTo(
+    w*.22,
+    h*.52
+  );
+
+  ctx.lineTo(
+    -w*.22,
+    h*.52
+  );
+
+  ctx.lineTo(
+    -w*.40,
+    h*.46
+  );
+
+  ctx.lineTo(
+    -w*.50,
+    h*.18
+  );
+
+  ctx.lineTo(
+    -w*.47,
+    -h*.08
+  );
+
+  ctx.lineTo(
+    -w*.39,
+    -h*.39
+  );
 
   ctx.closePath();
+
   ctx.fill();
 
   ctx.shadowBlur=0;
 
-  /* WINDSHIELD */
+  /* -------------------------------------------------------
+     SIDE AERO FINS
+  ------------------------------------------------------- */
 
-  ctx.fillStyle="rgba(20,45,75,.95)";
+  ctx.fillStyle=
+    playerCar
+      ? "#07141e"
+      : "#080a12";
 
   ctx.beginPath();
 
   ctx.moveTo(
-    -w*.23,
-    -h*.36
+    -w*.44,
+    -h*.05
   );
 
   ctx.lineTo(
-    w*.23,
-    -h*.36
+    -w*.57,
+    h*.16
   );
 
   ctx.lineTo(
-    w*.30,
-    -h*.10
-  );
-
-  ctx.lineTo(
-    -w*.30,
-    -h*.10
+    -w*.41,
+    h*.13
   );
 
   ctx.closePath();
+
   ctx.fill();
 
-  /* ROOF */
+  ctx.beginPath();
+
+  ctx.moveTo(
+    w*.44,
+    -h*.05
+  );
+
+  ctx.lineTo(
+    w*.57,
+    h*.16
+  );
+
+  ctx.lineTo(
+    w*.41,
+    h*.13
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* -------------------------------------------------------
+     ROOF / CABIN
+  ------------------------------------------------------- */
+
+  const glass=
+    ctx.createLinearGradient(
+      -w*.32,
+      -h*.40,
+      w*.30,
+      -h*.05
+    );
+
+  glass.addColorStop(
+    0,
+    "rgba(115,240,255,.65)"
+  );
+
+  glass.addColorStop(
+    .20,
+    "rgba(30,92,130,.92)"
+  );
+
+  glass.addColorStop(
+    .55,
+    "rgba(5,20,38,.96)"
+  );
+
+  glass.addColorStop(
+    1,
+    "rgba(1,7,14,.98)"
+  );
+
+  ctx.fillStyle=glass;
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.27,
+    -h*.42
+  );
+
+  ctx.lineTo(
+    w*.27,
+    -h*.42
+  );
+
+  ctx.lineTo(
+    w*.34,
+    -h*.13
+  );
+
+  ctx.lineTo(
+    -w*.34,
+    -h*.13
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* -------------------------------------------------------
+     WINDSHIELD SPLIT
+  ------------------------------------------------------- */
+
+  ctx.strokeStyle=
+    "rgba(145,245,255,.72)";
+
+  ctx.lineWidth=
+    Math.max(1,scale*2);
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    0,
+    -h*.41
+  );
+
+  ctx.lineTo(
+    0,
+    -h*.14
+  );
+
+  ctx.stroke();
+
+  /* -------------------------------------------------------
+     SIDE WINDOWS
+  ------------------------------------------------------- */
+
+  ctx.fillStyle=
+    "rgba(40,115,150,.52)";
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.31,
+    -h*.35
+  );
+
+  ctx.lineTo(
+    -w*.05,
+    -h*.37
+  );
+
+  ctx.lineTo(
+    -w*.05,
+    -h*.16
+  );
+
+  ctx.lineTo(
+    -w*.31,
+    -h*.17
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    w*.05,
+    -h*.37
+  );
+
+  ctx.lineTo(
+    w*.31,
+    -h*.35
+  );
+
+  ctx.lineTo(
+    w*.31,
+    -h*.17
+  );
+
+  ctx.lineTo(
+    w*.05,
+    -h*.16
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* -------------------------------------------------------
+     ROOF GLOW LINE
+  ------------------------------------------------------- */
 
   ctx.strokeStyle=
     playerCar
@@ -1493,94 +1823,1108 @@ function drawCar(
       : color;
 
   ctx.lineWidth=
-    Math.max(1,scale*4);
+    Math.max(
+      1,
+      scale*(playerCar?3:2)
+    );
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.27,
+    -h*.42
+  );
+
+  ctx.lineTo(
+    w*.27,
+    -h*.42
+  );
 
   ctx.stroke();
 
-  /* HEADLIGHTS */
+  /* -------------------------------------------------------
+     FRONT HOOD
+  ------------------------------------------------------- */
 
-  ctx.fillStyle="#dffcff";
+  const hood=
+    ctx.createLinearGradient(
+      -w*.4,
+      -h*.13,
+      w*.4,
+      h*.05
+    );
 
-  ctx.shadowBlur=12;
+  hood.addColorStop(
+    0,
+    "rgba(255,255,255,.18)"
+  );
+
+  hood.addColorStop(
+    .45,
+    "rgba(255,255,255,.02)"
+  );
+
+  hood.addColorStop(
+    1,
+    "rgba(0,0,0,.25)"
+  );
+
+  ctx.fillStyle=hood;
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.35,
+    -h*.13
+  );
+
+  ctx.lineTo(
+    w*.35,
+    -h*.13
+  );
+
+  ctx.lineTo(
+    w*.28,
+    h*.12
+  );
+
+  ctx.lineTo(
+    -w*.28,
+    h*.12
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* -------------------------------------------------------
+     BODY REFLECTION
+  ------------------------------------------------------- */
+
+  const reflection=
+    ctx.createLinearGradient(
+      -w*.4,
+      -h*.3,
+      w*.4,
+      h*.2
+    );
+
+  reflection.addColorStop(
+    0,
+    "rgba(255,255,255,.45)"
+  );
+
+  reflection.addColorStop(
+    .18,
+    "rgba(255,255,255,.12)"
+  );
+
+  reflection.addColorStop(
+    .40,
+    "rgba(255,255,255,0)"
+  );
+
+  reflection.addColorStop(
+    .78,
+    "rgba(0,234,255,.10)"
+  );
+
+  reflection.addColorStop(
+    1,
+    "rgba(255,255,255,0)"
+  );
+
+  ctx.fillStyle=reflection;
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.36,
+    -h*.31
+  );
+
+  ctx.lineTo(
+    w*.05,
+    -h*.31
+  );
+
+  ctx.lineTo(
+    w*.28,
+    h*.30
+  );
+
+  ctx.lineTo(
+    -w*.05,
+    h*.30
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* -------------------------------------------------------
+     FRONT GRILLE
+  ------------------------------------------------------- */
+
+  ctx.fillStyle="#020409";
+
+  roundedRectPath(
+    -w*.27,
+    h*.07,
+    w*.54,
+    h*.13,
+    h*.025
+  );
+
+  ctx.fill();
+
+  ctx.strokeStyle=
+    playerCar
+      ? "#00eaff"
+      : "#566078";
+
+  ctx.lineWidth=
+    Math.max(1,scale*1.5);
+
+  ctx.stroke();
+
+  /* grille bars */
+
+  ctx.strokeStyle=
+    "rgba(100,180,210,.55)";
+
+  ctx.lineWidth=
+    Math.max(1,scale);
+
+  for(let i=-2;i<=2;i++){
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      i*w*.075,
+      h*.09
+    );
+
+    ctx.lineTo(
+      i*w*.075,
+      h*.17
+    );
+
+    ctx.stroke();
+
+  }
+
+  /* -------------------------------------------------------
+     LED HEADLIGHTS
+  ------------------------------------------------------- */
+
+  ctx.save();
+
+  ctx.shadowBlur=
+    playerCar
+      ? 22
+      : 12;
+
   ctx.shadowColor="#00eaff";
 
-  ctx.fillRect(
-    -w*.35,
-    -h*.05,
-    w*.18,
-    h*.08
+  const led=
+    ctx.createLinearGradient(
+      0,
+      -h*.04,
+      0,
+      h*.04
+    );
+
+  led.addColorStop(
+    0,
+    "#ffffff"
   );
 
-  ctx.fillRect(
+  led.addColorStop(
+    .45,
+    "#d9ffff"
+  );
+
+  led.addColorStop(
+    1,
+    "#00eaff"
+  );
+
+  ctx.fillStyle=led;
+
+  /* left */
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.39,
+    -h*.045
+  );
+
+  ctx.lineTo(
+    -w*.17,
+    -h*.075
+  );
+
+  ctx.lineTo(
+    -w*.18,
+    h*.005
+  );
+
+  ctx.lineTo(
+    -w*.39,
+    h*.035
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* right */
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    w*.39,
+    -h*.045
+  );
+
+  ctx.lineTo(
     w*.17,
-    -h*.05,
+    -h*.075
+  );
+
+  ctx.lineTo(
     w*.18,
-    h*.08
+    h*.005
   );
 
-  ctx.shadowBlur=0;
-
-  /* TAIL */
-
-  ctx.fillStyle="#ff183f";
-
-  ctx.fillRect(
-    -w*.34,
-    h*.25,
-    w*.16,
-    h*.08
+  ctx.lineTo(
+    w*.39,
+    h*.035
   );
 
-  ctx.fillRect(
-    w*.18,
-    h*.25,
-    w*.16,
-    h*.08
-  );
+  ctx.closePath();
 
-  /* CENTER STRIPE */
+  ctx.fill();
+
+  ctx.restore();
+
+  /* -------------------------------------------------------
+     HEADLIGHT BEAMS
+  ------------------------------------------------------- */
+
+  if(playerCar&&player.speed>90){
+
+    ctx.save();
+
+    ctx.globalAlpha=.07;
+
+    ctx.fillStyle="#00eaff";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      -w*.30,
+      h*.02
+    );
+
+    ctx.lineTo(
+      -w*.48,
+      h*.70
+    );
+
+    ctx.lineTo(
+      -w*.05,
+      h*.70
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      w*.30,
+      h*.02
+    );
+
+    ctx.lineTo(
+      w*.48,
+      h*.70
+    );
+
+    ctx.lineTo(
+      w*.05,
+      h*.70
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.restore();
+
+  }
+
+  /* -------------------------------------------------------
+     RACING CENTER STRIPE
+  ------------------------------------------------------- */
 
   if(playerCar){
 
-    ctx.fillStyle="rgba(255,255,255,.9)";
+    ctx.fillStyle=
+      "rgba(240,250,255,.88)";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      -w*.035,
+      -h*.49
+    );
+
+    ctx.lineTo(
+      w*.035,
+      -h*.49
+    );
+
+    ctx.lineTo(
+      w*.05,
+      h*.34
+    );
+
+    ctx.lineTo(
+      -w*.05,
+      h*.34
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.fillStyle=
+      "rgba(0,234,255,.45)";
 
     ctx.fillRect(
-      -w*.035,
-      -h*.43,
-      w*.07,
-      h*.85
+      -w*.012,
+      -h*.49,
+      w*.024,
+      h*.82
     );
 
   }
 
-  /* NITRO */
+  /* -------------------------------------------------------
+     RACING WHEELS
+  ------------------------------------------------------- */
 
-  if(playerCar&&keys[" "]&&player.speed>40){
+  const wheelY1=-h*.03;
+  const wheelY2=h*.31;
 
-    const flame=
-      25+
-      Math.random()*25;
+  function drawWheel(wx,wy,ww,wh){
 
-    const grad=
-      ctx.createLinearGradient(
-        0,h*.38,
-        0,h*.38+flame
-      );
+    ctx.save();
 
-    grad.addColorStop(0,"#eaffff");
-    grad.addColorStop(.3,"#00eaff");
-    grad.addColorStop(1,"rgba(150,0,255,0)");
+    /* tyre */
 
-    ctx.fillStyle=grad;
+    ctx.fillStyle="#020307";
 
     ctx.beginPath();
 
-    ctx.moveTo(-w*.18,h*.40);
-    ctx.lineTo(0,h*.40+flame);
-    ctx.lineTo(w*.18,h*.40);
+    ctx.ellipse(
+      wx,
+      wy,
+      ww,
+      wh,
+      0,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.strokeStyle=
+      "rgba(110,130,150,.65)";
+
+    ctx.lineWidth=
+      Math.max(1,scale*2);
+
+    ctx.stroke();
+
+    /* rim */
+
+    ctx.fillStyle=
+      playerCar
+        ? "#a8c7d4"
+        : "#727d91";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      wx,
+      wy,
+      ww*.57,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    /* dark inner rim */
+
+    ctx.fillStyle="#10151e";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      wx,
+      wy,
+      ww*.40,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    /* spokes */
+
+    ctx.strokeStyle=
+      playerCar
+        ? "#d9faff"
+        : "#b7bfca";
+
+    ctx.lineWidth=
+      Math.max(1,scale*1.3);
+
+    for(let s=0;s<5;s++){
+
+      const a=
+        s*Math.PI*2/5;
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        wx,
+        wy
+      );
+
+      ctx.lineTo(
+        wx+
+        Math.cos(a)*ww*.48,
+        wy+
+        Math.sin(a)*ww*.48
+      );
+
+      ctx.stroke();
+
+    }
+
+    ctx.fillStyle=
+      playerCar
+        ? "#00eaff"
+        : color;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      wx,
+      wy,
+      ww*.13,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+
+  }
+
+  drawWheel(
+    -w*.48,
+    wheelY1,
+    w*.105,
+    h*.105
+  );
+
+  drawWheel(
+    w*.48,
+    wheelY1,
+    w*.105,
+    h*.105
+  );
+
+  drawWheel(
+    -w*.48,
+    wheelY2,
+    w*.115,
+    h*.115
+  );
+
+  drawWheel(
+    w*.48,
+    wheelY2,
+    w*.115,
+    h*.115
+  );
+
+  /* -------------------------------------------------------
+     SIDE SKIRTS
+  ------------------------------------------------------- */
+
+  ctx.fillStyle=
+    playerCar
+      ? "#06151d"
+      : "#080b12";
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.43,
+    h*.16
+  );
+
+  ctx.lineTo(
+    -w*.55,
+    h*.32
+  );
+
+  ctx.lineTo(
+    -w*.36,
+    h*.36
+  );
+
+  ctx.lineTo(
+    -w*.30,
+    h*.22
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    w*.43,
+    h*.16
+  );
+
+  ctx.lineTo(
+    w*.55,
+    h*.32
+  );
+
+  ctx.lineTo(
+    w*.36,
+    h*.36
+  );
+
+  ctx.lineTo(
+    w*.30,
+    h*.22
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* -------------------------------------------------------
+     REAR SPOILER
+  ------------------------------------------------------- */
+
+  if(playerCar){
+
+    ctx.strokeStyle="#101722";
+
+    ctx.lineWidth=
+      Math.max(2,scale*5);
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      -w*.32,
+      h*.39
+    );
+
+    ctx.lineTo(
+      -w*.32,
+      h*.52
+    );
+
+    ctx.moveTo(
+      w*.32,
+      h*.39
+    );
+
+    ctx.lineTo(
+      w*.32,
+      h*.52
+    );
+
+    ctx.stroke();
+
+    const spoiler=
+      ctx.createLinearGradient(
+        -w*.48,
+        0,
+        w*.48,
+        0
+      );
+
+    spoiler.addColorStop(
+      0,
+      "#05070c"
+    );
+
+    spoiler.addColorStop(
+      .45,
+      "#293344"
+    );
+
+    spoiler.addColorStop(
+      .70,
+      "#00eaff"
+    );
+
+    spoiler.addColorStop(
+      1,
+      "#05070c"
+    );
+
+    ctx.fillStyle=spoiler;
+
+    roundedRectPath(
+      -w*.48,
+      h*.48,
+      w*.96,
+      h*.075,
+      h*.018
+    );
+
+    ctx.fill();
+
+    ctx.strokeStyle=
+      "rgba(0,234,255,.55)";
+
+    ctx.lineWidth=
+      Math.max(1,scale);
+
+    ctx.stroke();
+
+  }
+
+  /* -------------------------------------------------------
+     BRAKE LIGHTS / REAR LIGHT BAR
+  ------------------------------------------------------- */
+
+  ctx.save();
+
+  ctx.shadowBlur=
+    playerCar
+      ? 16
+      : 8;
+
+  ctx.shadowColor="#ff123f";
+
+  const brake=
+    ctx.createLinearGradient(
+      -w*.4,
+      0,
+      w*.4,
+      0
+    );
+
+  brake.addColorStop(
+    0,
+    "#5a0615"
+  );
+
+  brake.addColorStop(
+    .20,
+    "#ff173f"
+  );
+
+  brake.addColorStop(
+    .50,
+    "#ff5570"
+  );
+
+  brake.addColorStop(
+    .80,
+    "#ff173f"
+  );
+
+  brake.addColorStop(
+    1,
+    "#5a0615"
+  );
+
+  ctx.fillStyle=brake;
+
+  roundedRectPath(
+    -w*.39,
+    h*.25,
+    w*.78,
+    h*.075,
+    h*.02
+  );
+
+  ctx.fill();
+
+  ctx.restore();
+
+  /* -------------------------------------------------------
+     REAR DIFFUSER
+  ------------------------------------------------------- */
+
+  ctx.fillStyle="#020307";
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    -w*.30,
+    h*.34
+  );
+
+  ctx.lineTo(
+    w*.30,
+    h*.34
+  );
+
+  ctx.lineTo(
+    w*.24,
+    h*.48
+  );
+
+  ctx.lineTo(
+    -w*.24,
+    h*.48
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  /* -------------------------------------------------------
+     DUAL EXHAUST
+  ------------------------------------------------------- */
+
+  function exhaust(ex){
+
+    ctx.fillStyle="#05070b";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      ex,
+      h*.46,
+      w*.075,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.strokeStyle=
+      playerCar
+        ? "#7d8b9a"
+        : "#4c5561";
+
+    ctx.lineWidth=
+      Math.max(1,scale*2);
+
+    ctx.stroke();
+
+    if(nitroActive){
+
+      const flame=
+        25+
+        Math.random()*35;
+
+      const fg=
+        ctx.createLinearGradient(
+          ex,
+          h*.49,
+          ex,
+          h*.49+flame
+        );
+
+      fg.addColorStop(
+        0,
+        "#ffffff"
+      );
+
+      fg.addColorStop(
+        .20,
+        "#00eaff"
+      );
+
+      fg.addColorStop(
+        .52,
+        "#1775ff"
+      );
+
+      fg.addColorStop(
+        1,
+        "rgba(184,0,255,0)"
+      );
+
+      ctx.fillStyle=fg;
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        ex-w*.045,
+        h*.48
+      );
+
+      ctx.lineTo(
+        ex,
+        h*.48+flame
+      );
+
+      ctx.lineTo(
+        ex+w*.045,
+        h*.48
+      );
+
+      ctx.closePath();
+
+      ctx.fill();
+
+    }
+
+  }
+
+  exhaust(-w*.16);
+  exhaust(w*.16);
+
+  /* -------------------------------------------------------
+     NITRO SIDE FLAMES
+  ------------------------------------------------------- */
+
+  if(nitroActive){
+
+    ctx.save();
+
+    ctx.globalAlpha=.7;
+
+    const sideFlame=
+      18+
+      Math.random()*24;
+
+    const ng=
+      ctx.createLinearGradient(
+        0,
+        h*.24,
+        0,
+        h*.24+sideFlame
+      );
+
+    ng.addColorStop(
+      0,
+      "#eaffff"
+    );
+
+    ng.addColorStop(
+      .25,
+      "#00eaff"
+    );
+
+    ng.addColorStop(
+      .7,
+      "#8b2cff"
+    );
+
+    ng.addColorStop(
+      1,
+      "rgba(0,0,0,0)"
+    );
+
+    ctx.fillStyle=ng;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      -w*.40,
+      h*.26
+    );
+
+    ctx.lineTo(
+      -w*.47,
+      h*.26+sideFlame
+    );
+
+    ctx.lineTo(
+      -w*.34,
+      h*.26
+    );
 
     ctx.closePath();
+
     ctx.fill();
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      w*.40,
+      h*.26
+    );
+
+    ctx.lineTo(
+      w*.47,
+      h*.26+sideFlame
+    );
+
+    ctx.lineTo(
+      w*.34,
+      h*.26
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.restore();
+
+  }
+
+  /* -------------------------------------------------------
+     DAMAGE VISUAL
+  ------------------------------------------------------- */
+
+  if(playerCar&&player.damage>18){
+
+    const d=
+      clamp(
+        player.damage/100,
+        0,
+        1
+      );
+
+    ctx.save();
+
+    ctx.strokeStyle=
+      "rgba(255,45,65,"+
+      (.25+d*.65)+")";
+
+    ctx.lineWidth=
+      Math.max(
+        1,
+        scale*(1+d*3)
+      );
+
+    /* left crack */
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      -w*.34,
+      -h*.05
+    );
+
+    ctx.lineTo(
+      -w*.24,
+      h*.05
+    );
+
+    ctx.lineTo(
+      -w*.31,
+      h*.18
+    );
+
+    ctx.lineTo(
+      -w*.20,
+      h*.25
+    );
+
+    ctx.stroke();
+
+    /* right crack */
+
+    if(player.damage>45){
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        w*.32,
+        -h*.08
+      );
+
+      ctx.lineTo(
+        w*.22,
+        h*.04
+      );
+
+      ctx.lineTo(
+        w*.29,
+        h*.18
+      );
+
+      ctx.lineTo(
+        w*.17,
+        h*.28
+      );
+
+      ctx.stroke();
+
+    }
+
+    /* damage smoke */
+
+    if(player.damage>65){
+
+      ctx.fillStyle=
+        "rgba(40,45,55,.38)";
+
+      for(let i=0;i<4;i++){
+
+        ctx.beginPath();
+
+        ctx.arc(
+          (Math.random()-.5)*w*.5,
+          -h*.55-Math.random()*20,
+          4+Math.random()*7,
+          0,
+          Math.PI*2
+        );
+
+        ctx.fill();
+
+      }
+
+    }
+
+    ctx.restore();
+
+  }
+
+  /* -------------------------------------------------------
+     PLAYER BADGE
+  ------------------------------------------------------- */
+
+  if(playerCar){
+
+    ctx.save();
+
+    ctx.globalAlpha=.8;
+
+    ctx.fillStyle="#00eaff";
+
+    ctx.font=
+      `900 ${Math.max(7,8*scale)}px Arial`;
+
+    ctx.textAlign="center";
+
+    ctx.fillText(
+      "REZA",
+      0,
+      h*.61
+    );
+
+    ctx.restore();
 
   }
 
@@ -1636,7 +2980,8 @@ function drawOpponents(){
       7*scale,
       scale,
       item.o.color,
-      false
+      false,
+      item.o.style
     );
 
   }
@@ -1659,7 +3004,8 @@ function drawPlayer(){
     H*.87+bob,
     1.05,
     "#08aeea",
-    true
+    true,
+    "sport"
   );
 
 }
@@ -1785,8 +3131,6 @@ function drawMini(){
 
   mctx.stroke();
 
-  /* PLAYER */
-
   const py=
     (player.z/TRACK)*124+8;
 
@@ -1799,8 +3143,6 @@ function drawMini(){
   mctx.beginPath();
   mctx.arc(px,py,5,0,Math.PI*2);
   mctx.fill();
-
-  /* OPPONENTS */
 
   for(const o of opponents){
 
@@ -1880,8 +3222,6 @@ function updateOpponents(dt){
 
     let boost=0;
 
-    /* AI catch-up */
-
     const gap=
       distanceAhead(
         o.z,
@@ -1934,8 +3274,6 @@ function updatePlayer(dt){
   const nitro=
     keys[" "];
 
-  /* ACCELERATION */
-
   if(accelerating){
 
     player.speed+=
@@ -1948,16 +3286,12 @@ function updatePlayer(dt){
 
   }
 
-  /* BRAKE */
-
   if(braking){
 
     player.speed-=
       240*dt;
 
   }
-
-  /* NITRO */
 
   if(
     nitro&&
@@ -1992,8 +3326,6 @@ function updatePlayer(dt){
       100
     );
 
-  /* SPEED LIMIT */
-
   const limit=
     player.maxSpeed+
     (
@@ -2008,8 +3340,6 @@ function updatePlayer(dt){
       0,
       limit
     );
-
-  /* STEERING */
 
   let steer=0;
 
@@ -2027,8 +3357,6 @@ function updatePlayer(dt){
     steerPower*
     dt;
 
-  /* DRIFT */
-
   player.drift=
     lerp(
       player.drift,
@@ -2037,8 +3365,6 @@ function updatePlayer(dt){
       player.maxSpeed,
       .12
     );
-
-  /* TRACK BOUNDARY */
 
   if(Math.abs(player.x)>.92){
 
@@ -2069,10 +3395,6 @@ function updatePlayer(dt){
       1.08
     );
 
-  /* MOVE */
-
-  const oldZ=player.z;
-
   player.z+=
     player.speed*
     dt;
@@ -2097,8 +3419,6 @@ function updatePlayer(dt){
     }
 
   }
-
-  /* COLLISION */
 
   for(const o of opponents){
 
@@ -2143,8 +3463,6 @@ function updatePlayer(dt){
     }
 
   }
-
-  /* DAMAGE RECOVERY */
 
   player.damage=
     Math.max(
@@ -2316,6 +3634,7 @@ function startRace(){
   ).style.display="none";
 
   beep(660,.1);
+
   setTimeout(
     ()=>beep(880,.15),
     130
@@ -2397,7 +3716,7 @@ function finishRace(){
   player.speed=0;
 
   const playerProgress=
-    (TOTAL_LAPS)*TRACK+
+    TOTAL_LAPS*TRACK+
     player.z;
 
   let pos=1;
@@ -2436,6 +3755,14 @@ function finishRace(){
       <strong style="color:#00eaff">
         ${Math.round(player.maxSpeed)} KM/H
       </strong>
+      <br>
+      <span style="
+        color:#9defff;
+        font-size:12px;
+        letter-spacing:3px;
+      ">
+        REZA SUPER CAR
+      </span>
     `;
 
   document.getElementById(
@@ -2443,6 +3770,7 @@ function finishRace(){
   ).style.display="flex";
 
   beep(880,.15);
+
   setTimeout(
     ()=>beep(1100,.2),
     170
@@ -2516,13 +3844,75 @@ function drawSpeedLines(){
 
     fctx.beginPath();
     fctx.moveTo(x,y);
+
     fctx.lineTo(
       x,
       y+len
     );
+
     fctx.stroke();
 
   }
+
+  fctx.restore();
+
+}
+
+/* =========================================================
+   NITRO FX
+========================================================= */
+
+function drawNitroFX(){
+
+  if(!running||paused)return;
+
+  if(!keys[" "]||player.speed<80)return;
+
+  const power=
+    clamp(
+      player.speed/400,
+      0,
+      1
+    );
+
+  fctx.save();
+
+  fctx.globalAlpha=.10+
+    power*.16;
+
+  const g=
+    fctx.createRadialGradient(
+      W/2,
+      H*.76,
+      10,
+      W/2,
+      H*.76,
+      W*.55
+    );
+
+  g.addColorStop(
+    0,
+    "rgba(0,234,255,.7)"
+  );
+
+  g.addColorStop(
+    .35,
+    "rgba(0,100,255,.25)"
+  );
+
+  g.addColorStop(
+    1,
+    "rgba(180,0,255,0)"
+  );
+
+  fctx.fillStyle=g;
+
+  fctx.fillRect(
+    0,
+    H*.35,
+    W,
+    H*.65
+  );
 
   fctx.restore();
 
@@ -2599,6 +3989,8 @@ function loop(now){
   drawParticles(dt);
 
   drawSpeedLines();
+
+  drawNitroFX();
 
   updateHUD();
 
